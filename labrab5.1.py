@@ -1,4 +1,6 @@
 import random
+import matplotlib.pyplot as plt
+import networkx as nx
 from collections import defaultdict
 
 class Graph:
@@ -72,8 +74,22 @@ class Graph:
         for row in self.graph:
             print(" ".join(map(str, row)))
 
+    def draw_graph(self):
+        G = nx.DiGraph()  # Create a directed graph
+        for i in range(self.ROW):
+            for j in range(self.COL):
+                if self.graph[i][j] > 0:  # Only add edges with positive weights
+                    G.add_edge(i, j, weight=self.graph[i][j])
+
+        pos = nx.spring_layout(G)  # Positioning of nodes
+        nx.draw(G, pos, with_labels=True, node_size=700, node_color='lightblue', font_size=10, font_weight='bold')
+        edge_labels = nx.get_edge_attributes(G, 'weight')
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+        plt.title("Graph Visualization")
+        plt.show()
+
 # Create a graph with random weights
-graph_size = 25  # Adjust the size of the graph as needed
+graph_size = 7  # Set the size of the graph to 7 vertices
 graph = [[0 for _ in range(graph_size)] for _ in range(graph_size)]
 
 # Generate random weights for the edges
@@ -90,10 +106,17 @@ sink = graph_size - 1
 g = Graph(graph)
 
 # Print the graph
+
+
 g.print_graph()
+
+# Draw the graph
+g.draw_graph()
 
 # Calculate the maximum flow
 max_flow = g.ford_fulkerson(source, sink)
 
 # Print the maximum flow
 print(f"The maximum flow is: {max_flow}")
+
+
