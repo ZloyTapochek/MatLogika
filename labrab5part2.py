@@ -1,62 +1,90 @@
-from collections import defaultdict
+import matplotlib.pyplot as plt
+import networkx as nx
+from collections import deque
 
-def build_bipartite_graph(matrix):
-  """Строит двудольный граф из матрицы смежности.
+class BipartiteGraph:
+    def __init__(self, adj_matrix):
+        self.adj_matrix = adj_matrix
+        self.n = len(adj_matrix)  # Количество вершин в левой части
+        self.m = len(adj_matrix[0]) if self.n > 0 else 0  # Количество вершин в правой части
+        self.pair_u = [-1] * self.n  # Пары для левой части
+        self.pair_v = [-1] * self.m  # Пары для правой части
+        self.dist = [-1] * self.n  # Расстояния в BFS
 
-  Args:
-    matrix: Матрица смежности, где 1 означает ребро, 0 - отсутствие ребра.
+    def bfs(self):
+        queue = deque()
+        for u in range(self.n):
+            if self.pair_u[u] == -1:  # Если вершина не парная
+                self.dist[u] = 0
+                queue.append(u)
+            else:
+                self.dist[u] = float('inf')
 
-  Returns:
-    Словарь, представляющий двудольный граф. Ключи - вершины левой части, 
-    значения - списки смежных вершин правой части.
-  """
-  n_left = len(matrix)
-  n_right = len(matrix[0])
-  graph = defaultdict(list)
-  for i in range(n_left):
-    for j in range(n_right):
-      if matrix[i][j] == 1:
-        graph[i + 1].append(j + 1)  # +1 для удобства нумерации вершин
-  return graph
+        found_augmenting_path = False
+        while queue:
+            u = queue.popleft()
+            for v in range(self.m):
+                if self.adj_matrix[u][v] and self.pair_v[v] == -1:
+                    found_augmenting_path = True
+                if self.adj_matrix[u][v] and self.pair_v[v] != -1 and self.dist[self.pair_v[v]] == float('inf'):
+                    self.dist[self.pair_v[v]] = self.dist[u] + 1
+                    queue.append(self.pair_v[v])
 
-def max_matching(graph):
-  """Находит наибольшее паросочетание в двудольном графе.
+        return found_augmenting_path
 
-  Args:
-    graph: Словарь, представляющий двудольный граф.
+    def dfs(self, u):
+        for v in range(self.m):
+            if self.adj_matrix[u][v] and (self.pair_v[v] == -1 or (self.dist[self.pair_v[v]] == self.dist[u] + 1 and self.dfs(self.pair_v[v]))):
+                self.pair_u[u] = v
+                self.pair_v[v] = u
+                return True
+        self.dist[u] = float('inf')
+        return False
 
-  Returns:
-    Список пар вершин, представляющих наибольшее паросочетание.
-  """
-  matching = {}
-  visited = set()
-  for u in graph:
-    if u not in visited:
-      visited.add(u)
-      for v in graph[u]:
-        if v not in matching or dfs(graph, matching, visited, v):
-          matching[u] = v
-          break
-  return matching
+    def hopcroft_karp(self):
+        matching_size = 0
+        while self.bfs():
+            for u in range(self.n):
+                if self.pair_u[u] == -1 and self.dfs(u):
+                    matching_size += 1
+        return matching_size
 
-def dfs(graph, matching, visited, v):
-  """Рекурсивная функция поиска пути в графе."""
-  visited.add(v)
-  for u in graph:
-    if (u not in matching or matching[u] == v) and u not in visited:
-      visited.add(u)
-      if (v in graph[u] or not graph[u]):  # Исправленное условие
-        if (v not in graph[u] or dfs(graph, matching, visited, matching[u])):
-          matching[u] = v
-          return True
-  return False
+    def draw_graph(self):
+        G = nx.Graph()
+        # Добавляем вершины и ребра в граф
+        for u in range(self.n):
+            for v in range(self.m):
+                if self.adj_matrix[u][v]:
+                    G.add_edge(f'U{u}', f'V{v}')
 
-matrix = [[1, 1, 1, 1],
-         [1, 0, 0, 1],
-         [1, 1, 1, 1],
-         [1, 0, 0, 1],
-         [1, 1, 1, 1]]
+        pos = {}
+        # Устанавливаем позиции для левой и правой частей
+        for i in range(self.n):
+            pos[f'U{i}'] = (0, i)  # Левые вершины
+        for j in range(self.m):
+            pos[f'V{j}'] = (1, j)  # Правые вершины
 
-graph = build_bipartite_graph(matrix)
-matching = max_matching(graph)
-print(f"Наибольшее паросочетание: {matching}")
+        # Определяем цвета узлов
+        node_colors = ['lightgreen' if i == 0 else 'lightblue' for i in range(self.n)] + ['lightgreen' for _ in range(self.m)]
+
+        nx.draw(G, pos, with_labels=True, node_color=node_colors, node_size=2000)
+        plt.title("Двудольный граф")
+        plt.show()
+
+# Пример использования
+if __name__ == "__main__":
+    # Новая матрица смежности для двудольного графа
+    adj_matrix = [
+        [1, 1, 1, 1],
+        [1, 0, 0, 1],
+        [1, 1, 1, 1],
+        [1, 0, 0, 1],
+        [1, 1, 1, 1]
+    ]
+
+    graph = BipartiteGraph(adj_matrix)
+    max_matching = graph.hopcroft_karp()
+    print(f"Наибольшее паросочетание: {max_matching}")
+
+    # Отрисовка графа
+    graph.draw_graph()
