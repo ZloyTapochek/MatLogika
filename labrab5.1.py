@@ -67,6 +67,11 @@ class Graph:
 
         return None
 
+    def print_graph(self):
+        print("Graph adjacency matrix:")
+        for row in self.graph:
+            print(" ".join(map(str, row)))
+
 # Create a graph with random weights
 graph_size = 25  # Adjust the size of the graph as needed
 graph = [[0 for _ in range(graph_size)] for _ in range(graph_size)]
@@ -83,6 +88,9 @@ sink = graph_size - 1
 
 # Create a graph object
 g = Graph(graph)
+
+# Print the graph
+g.print_graph()
 
 # Calculate the maximum flow
 max_flow = g.ford_fulkerson(source, sink)
