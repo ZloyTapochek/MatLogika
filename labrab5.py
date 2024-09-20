@@ -31,16 +31,17 @@ if __name__ == "__main__":
     # Создаем граф
     G = create_weighted_graph()
 
-    # Отрисовываем граф
-    draw_graph(G)
-
     # Находим максимальный поток
     source = 'A'
     sink = 'E'
     flow_value, flow_dict = max_flow(G, source, sink)
 
+    # Выводим результаты
     print(f"Максимальный поток от {source} до {sink}: {flow_value}")
     print("Поток по ребрам:")
     for u, v in flow_dict.items():
         for k, v in v.items():
             print(f"{u} -> {k}: {v}")
+
+    # Отрисовываем граф
+    draw_graph(G)
