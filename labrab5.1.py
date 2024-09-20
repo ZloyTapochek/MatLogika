@@ -1,122 +1,43 @@
-import random
-import matplotlib.pyplot as plt
 import networkx as nx
-from collections import defaultdict
+import matplotlib.pyplot as plt
 
-class Graph:
-    def __init__(self, graph):
-        self.graph = graph
-        self.ROW = len(graph)
-        self.COL = len(graph[0])
+def draw_graph(G, pos, source, sink):
+    # Отрисовка графа
+    nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=2000, font_size=10, font_weight='bold', arrows=True)
+    
+    # Указание источника и стока
+    plt.text(pos[source][0], pos[source][1] + 0.1, "Источник", fontsize=12, ha='center')
+    plt.text(pos[sink][0], pos[sink][1] - 0.1, "Сток", fontsize=12, ha='center')
+    
+    # Отображение весов на ребрах
+    edge_labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+    
+    plt.show()
 
-    def ford_fulkerson(self, source, sink):
-        # Create a residual graph
-        residual_graph = [[0 for _ in range(self.COL)] for _ in range(self.ROW)]
-        for i in range(self.ROW):
-            for j in range(self.COL):
-                residual_graph[i][j] = self.graph[i][j]
+def main():
+    # Создание направленного графа
+    G = nx.DiGraph()
+    
+    # Добавление ребер с весами (все веса положительные и конечные)
+    G.add_edge('A', 'B', weight=3)
+    G.add_edge('A', 'C', weight=2)
+    G.add_edge('B', 'C', weight=1)
+    G.add_edge('B', 'D', weight=4)
+    G.add_edge('C', 'D', weight=2)
+    G.add_edge('D', 'E', weight=5)
+    
+    source = 'A'  # Источник
+    sink = 'E'    # Сток
+    
+    # Вычисление максимального потока
+    flow_value, flow_dict = nx.maximum_flow(G, source, sink)
+    print(f"Максимальный поток: {flow_value}")
+    print("Поток по ребрам:", flow_dict)
+    
+    # Отрисовка графа
+    pos = nx.spring_layout(G)  # Позиции узлов
+    draw_graph(G, pos, source, sink)
 
-        # Initialize flow to 0
-        flow = 0
-
-        while True:
-            # Find an augmenting path
-            path = self.find_augmenting_path(residual_graph, source, sink)
-            if not path:
-                break
-
-            # Calculate the minimum capacity along the path
-            min_capacity = float('inf')
-            for i in range(len(path) - 1):
-                min_capacity = min(min_capacity, residual_graph[path[i]][path[i + 1]])
-
-            # Update the flow
-            for i in range(len(path) - 1):
-                residual_graph[path[i]][path[i + 1]] -= min_capacity
-                residual_graph[path[i + 1]][path[i]] += min_capacity
-
-            # Increment the total flow
-            flow += min_capacity
-
-        return flow
-
-    def find_augmenting_path(self, residual_graph, source, sink):
-        visited = [False for _ in range(self.ROW)]
-        parent = [-1 for _ in range(self.ROW)]
-
-        queue = [source]
-        visited[source] = True
-
-        while queue:
-            u = queue.pop(0)
-
-            for v in range(self.COL):
-                if not visited[v] and residual_graph[u][v] > 0:
-                    queue.append(v)
-                    visited[v] = True
-                    parent[v] = u
-
-            if visited[sink]:
-                # Construct the path
-                path = []
-                current = sink
-                while current != source:
-                    path.append(current)
-                    current = parent[current]
-                path.append(source)
-                path.reverse()
-                return path
-
-        return None
-
-    def print_graph(self):
-        print("Graph adjacency matrix:")
-        for row in self.graph:
-            print(" ".join(map(str, row)))
-
-    def draw_graph(self):
-        G = nx.DiGraph()  # Create a directed graph
-        for i in range(self.ROW):
-            for j in range(self.COL):
-                if self.graph[i][j] > 0:  # Only add edges with positive weights
-                    G.add_edge(i, j, weight=self.graph[i][j])
-
-        pos = nx.spring_layout(G)  # Positioning of nodes
-        nx.draw(G, pos, with_labels=True, node_size=700, node_color='lightblue', font_size=10, font_weight='bold')
-        edge_labels = nx.get_edge_attributes(G, 'weight')
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
-        plt.title("Graph Visualization")
-        plt.show()
-
-# Create a graph with random weights
-graph_size = 7  # Set the size of the graph to 7 vertices
-graph = [[0 for _ in range(graph_size)] for _ in range(graph_size)]
-
-# Generate random weights for the edges
-for i in range(graph_size):
-    for j in range(graph_size):
-        if i != j:
-            graph[i][j] = random.randint(1, 10)  # Random weight between 1 and 10
-
-# Set the source and sink nodes
-source = 0
-sink = graph_size - 1
-
-# Create a graph object
-g = Graph(graph)
-
-# Print the graph
-
-
-g.print_graph()
-
-# Draw the graph
-g.draw_graph()
-
-# Calculate the maximum flow
-max_flow = g.ford_fulkerson(source, sink)
-
-# Print the maximum flow
-print(f"The maximum flow is: {max_flow}")
-
-
+if __name__ == "__main__":
+    main()
